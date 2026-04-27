@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,13 +26,20 @@ jobs:
       - name: Install Newman and Reporter
         run: npm install -g newman newman-reporter-html
 
+      - name: Create Newman Report Directory
+        run: mkdir -p Newman-report
+
       - name: Run Postman Tests
         continue-on-error: true
         run: |
-          newman run A-collections/*.json \
-            -e environments/*.json \
-            --reporters cli,html \
-            --reporter-html-export Newman-report/report.html
+          for file in A-collections/*.json; do
+            if [ -f "$file" ]; then
+              newman run "$file" \
+                -e environments/*.json \
+                --reporters cli,html \
+                --reporter-html-export Newman-report/report.html
+            fi
+          done
 
       - name: Upload Test Report
         if: always()
