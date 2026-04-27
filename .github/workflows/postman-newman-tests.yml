@@ -8,9 +8,6 @@ on:
     branches:
       - main
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -29,24 +26,27 @@ jobs:
       - name: Create Newman Report Directory
         run: mkdir -p Newman-report
 
+      - name: List files to debug
+        run: ls -la A-collections/
+
       - name: Run Postman Tests
         continue-on-error: true
         run: |
-          for file in A-collections/*.json; do
-            if [ -f "$file" ]; then
-              newman run "$file" \
-                -e environments/*.json \
-                --reporters cli,html \
-                --reporter-html-export Newman-report/report.html
-            fi
-          done
+          if [ -z "$(find A-collections -name '*.json' -type f)" ]; then
+            echo "No JSON files found in A-collections/"
+            exit 0
+          fi
+          newman run A-collections/*.postman_collection.json \
+            -e environments/*.postman_environment.json \
+            --reporters cli,html \
+            --reporter-html-export Newman-report/report.html
 
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: newman-test-report
-          path: Newman-report/report.html
+          path: Newman-report/
           retention-days: 30
 
       - name: Comment PR with Results
