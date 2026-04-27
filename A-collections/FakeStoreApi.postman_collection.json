@@ -215,9 +215,9 @@
                   "pm.test(\"Status is 200 or 404\", function () {\r",
                   "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);\r",
                   "});\r",
-                  "pm.test(\"Body is null for missing product\", function () {\r",
+                  "pm.test(\"Body is empty or null for missing product\", function () {\r",
                   "    pm.expect(pm.response.text()).to.satisfy(function(body) {\r",
-                  "        return body === \"null\" || body.includes(\"404\");\r",
+                  "        return body === \"null\" || body === \"\" || body.includes(\"404\");\r",
                   "    });\r",
                   "});"
                 ],

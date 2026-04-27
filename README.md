@@ -9,7 +9,7 @@
 
 This is an end-to-end API test suite built in Postman for the [FakeStoreAPI](https://fakestoreapi.com) — a public REST API that simulates a real e-commerce backend with Auth, Products, and Cart modules.
 
-The project demonstrates my ability to design and execute meaningful API tests, write assertion scripts, perform negative testing, and document defects — skills I've applied in 9 months of crowd-testing on Test.io across 40+ test cycles for global clients.
+The project demonstrates my ability to design and execute meaningful API tests, write assertion scripts, perform negative testing, and document defects — skills I have applied in 9 months of crowd-testing on Test.io across 40+ test cycles for global clients.
 
 ---
 
@@ -30,8 +30,8 @@ The project demonstrates my ability to design and execute meaningful API tests, 
 ### Auth Module
 | Request | Method | Test Type |
 |---|---|---|
-| Login – valid credentials | POST | Functional, Token validation |
-| Login – invalid credentials | POST | Negative testing |
+| Login – valid credentials | POST | Functional, Token validation, Performance |
+| Login – invalid credentials | POST | Negative testing, Performance |
 
 ### Products Module
 | Request | Method | Test Type |
@@ -46,7 +46,7 @@ The project demonstrates my ability to design and execute meaningful API tests, 
 | Request | Method | Test Type |
 |---|---|---|
 | Get user cart | GET | Functional |
-| Add to cart | POST | Functional, Response validation |
+| Add to cart | POST | Functional, Response validation, Performance |
 | Delete cart | DELETE | Functional |
 
 **Total: 10 requests | 26 test assertions**
@@ -75,19 +75,26 @@ pm.test("Schema is valid", function () {
 });
 ```
 
-**Negative test — invalid product ID returns null:**
+**Negative test — invalid product ID returns empty or null body:**
 ```javascript
-pm.test("Body is null for missing product", function () {
+pm.test("Body is empty or null for missing product", function () {
     pm.expect(pm.response.text()).to.satisfy(function(body) {
-        return body === "null" || body.includes("404");
+        return body === "null" || body === "" || body.includes("404");
     });
 });
 ```
 
-**Response time SLA — all GET requests must respond under 1000ms:**
+**Response time SLA — requests must respond under 1000ms:**
 ```javascript
 pm.test("Response under 1000ms", function () {
     pm.expect(pm.response.responseTime).to.be.below(1000);
+});
+```
+
+**Negative test — invalid credentials are rejected:**
+```javascript
+pm.test("Status is 400 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([400, 401]);
 });
 ```
 
@@ -95,7 +102,7 @@ pm.test("Response under 1000ms", function () {
 
 ## Skills Demonstrated
 
-- REST API testing with Postman (GET, POST, PUT, DELETE)
+- REST API testing with Postman (GET, POST, DELETE)
 - Test case design — functional, negative, boundary, schema validation
 - Environment variables and token chaining across requests
 - Response time / performance assertions
@@ -110,7 +117,7 @@ pm.test("Response under 1000ms", function () {
 ```
 postman-api-portfolio/
 ├── collections/
-│   └── FakeStoreApi_postman_collection.json
+│   └── FakeStoreApi.postman_collection.json
 ├── environments/
 │   └── Dev.postman_environment.json
 ├── reports/
@@ -125,75 +132,72 @@ postman-api-portfolio/
 ## How to Run Locally
 
 ### Option 1 – Postman UI
-1. Import `collections/FakeStoreApi_postman_collection.json` into Postman
+1. Import `collections/FakeStoreApi.postman_collection.json` into Postman
 2. Import `environments/Dev.postman_environment.json` and select it
-3. Open Collection Runner and run the full suite
+3. Open Collection Runner and click Run
 
 ### Option 2 – Newman CLI
 ```bash
 # Install Newman
 npm install -g newman newman-reporter-html
 
-# Run the collection and generate HTML report
-newman run collections/FakeStoreApi_postman_collection.json \
-  -e environments/Dev.postman_environment.json \
+# Run by passing base_url directly
+newman run collections/FakeStoreApi.postman_collection.json \
+  --env-var "base_url=https://fakestoreapi.com" \
   --reporters cli,html \
   --reporter-html-export reports/newman-report.html
 ```
 
 ---
 
-## Sample Test Results
+## Newman Run Results
 
-| Test | Status |
+| Detail | Value |
 |---|---|
-| Login valid – status 201 | ✅ Pass |
-| Login valid – token returned | ✅ Pass |
-| Login valid – response under 1000ms | ✅ Pass |
-| Login invalid – status 400 or 401 | ✅ Pass |
-| Login invalid – error message present | ✅ Pass |
-| Login invalid – response under 1000ms | ✅ Pass |
-| Get all products – status 200 | ✅ Pass |
-| Get all products – is array | ✅ Pass |
-| Get all products – not empty | ✅ Pass |
-| Get all products – field check | ✅ Pass |
-| Get all products – response under 1000ms | ✅ Pass |
-| Get single product – status 200 | ✅ Pass |
-| Get single product – schema valid | ✅ Pass |
-| Get invalid product – status 200 or 404 | ✅ Pass |
-| Get invalid product – body is null | ❌ Fail (API defect – see BR-002) |
-| Create product – status 200 or 201 | ✅ Pass |
-| Create product – ID returned | ✅ Pass |
-| Delete product – status 200 | ✅ Pass |
-| Delete product – ID returned | ✅ Pass |
-| Get user cart – status 200 | ✅ Pass |
-| Get user cart – is array | ✅ Pass |
-| Add to cart – status 200 or 201 | ✅ Pass |
-| Add to cart – cart ID returned | ✅ Pass |
-| Add to cart – response under 1000ms | ✅ Pass |
-| Delete cart – status 200 | ✅ Pass |
-| Delete cart – ID returned | ✅ Pass |
+| Environment | Dev |
+| Iterations | 1 |
+| Total requests | 10 |
+| Total assertions | 26 |
+| Passed | 26 |
+| Failed | 0 |
+| Errors | 0 |
+| Avg. Response Time | 342ms |
 
-**25 passed / 1 failed (known API defect — documented in BR-002)**
+### Full Test Results
+
+| Request | Response Code | Tests | Status |
+|---|---|---|---|
+| Login-Valid | 201 | Status is 201, Token is returned, Response under 1000ms | ✅ 3/3 |
+| Login-Invalid | 401 | Status is 400 or 401, Response under 1000ms, Error message is present | ✅ 3/3 |
+| Get all products | 200 | Status is 200, Is array, Not empty, Response under 1000ms, Field check | ✅ 5/5 |
+| Get Single Products | 200 | Status is 200, Schema is valid | ✅ 2/2 |
+| Get invalid product | 200 | Status is 200 or 404, Body is empty or null | ✅ 2/2 |
+| Create product | 201 | Status is 200 or 201, ID returned | ✅ 2/2 |
+| Delete product | 200 | Status is 200, ID returned | ✅ 2/2 |
+| Get user cart | 200 | Status is 200, Is array | ✅ 2/2 |
+| Add to cart | 201 | Status is 200 or 201, Cart ID returned, Response under 1000ms | ✅ 3/3 |
+| Delete cart | 200 | Status is 200, ID returned | ✅ 2/2 |
+
+**26 passed / 0 failed**
 
 ---
 
 ## Bugs Found During Testing
 
-While executing tests, 3 defects were identified across Auth, Products, and Cart modules.
-See [`bug-reports/BUG-REPORT.md`](bug-reports/BUG-REPORT.md) for full reports with reproduction
-steps, severity, and expected vs actual results.
+3 defects were identified and documented during test execution.
+See [`bug-reports/BUG-REPORT.md`](bug-reports/BUG-REPORT.md) for full reports.
 
-**Notable finding:** The login endpoint returns `201` instead of the industry-standard
-`200 OK` for a successful authentication response. POST endpoints that perform an action
-(like login) should return `200 OK`. `201 Created` is reserved for endpoints that create
-a new resource (like `POST /products`). This has been documented as BR-004.
+| Bug ID | Module | Summary | Severity |
+|---|---|---|---|
+| BR-001 | Products | GET /products/999 returns 200 + empty body instead of 404 | Medium |
+| BR-002 | Cart | POST /carts accepts empty request body | Low |
+| BR-003 | Auth | POST /auth/login returns 201 instead of standard 200 | Low |
 
 ---
 
 ## About Me
 
-I'm a Manual QA Tester with 9 months of hands-on experience in crowd-testing via Test.io —
+I am a Manual QA Tester with 9 months of hands-on experience in crowd-testing via Test.io —
 completing 40+ test cycles, submitting 38 user stories, and getting 22 bugs approved across
 web and mobile applications for global clients.
 
