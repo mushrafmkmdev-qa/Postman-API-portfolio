@@ -1,0 +1,52 @@
+name: Postman Newman Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Newman and Reporter
+        run: npm install -g newman newman-reporter-html
+
+      - name: Run Postman Tests
+        continue-on-error: true
+        run: |
+          newman run A-collections/*.json \
+            -e environments/*.json \
+            --reporters cli,html \
+            --reporter-html-export Newman-report/report.html
+
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-test-report
+          path: Newman-report/report.html
+          retention-days: 30
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Postman API Tests Completed**\n\nCheck the Newman HTML report in the workflow artifacts for detailed results.'
+            })
